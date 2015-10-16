@@ -25566,6 +25566,8 @@ module.exports = function() {
                 format: 'jsonp'
             },
             success: function load(fcc) {
+                var state = fcc.State.code.toLowerCase();
+                console.log(state);
                 result.block = fcc.Block.FIPS;
                 fipsCode = fcc.County.FIPS;
 
@@ -25589,7 +25591,7 @@ module.exports = function() {
                         if (!inCounty) {
                             // load geoson
                             $.ajax({
-                                url: 'geojson/vt.geojson',
+                                url: 'geojson/' + state + '.geojson',
                                 dataType: 'json',
                                 success: function load(d) {
                                     var gjLayer = L.geoJson(d);
