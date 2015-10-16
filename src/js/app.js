@@ -11,10 +11,9 @@ require('./misc');
 window.mapboxAPI = {};
 window.fccAPI = {};
 
-var mapboxResult = {};
 
 mapboxAPI.callback = function(err, data) {
-    mapboxResult = data;
+    //console.log(mapboxResult);
 
     var input = address.getInput(data.results.query);
         
@@ -29,16 +28,8 @@ mapboxAPI.callback = function(err, data) {
         address.render(result);
         count.updateCount(result.type);
     } else { // api returned a match
-        address.getFIPSandCounty(data.results.features[0].center[1], data.results.features[0].center[0]);
+       address.isRural(data, $('#year').val());
     }
-}
-
-fccAPI.callback = function(data) {
-    // check for rural or underserved
-    address.isRural(mapboxResult, data, $('#year').val());
-    /*// render
-    address.render(result);
-    count.updateCount(result.type);*/
 }
 
 // on submit

@@ -25476,14 +25476,6 @@ module.exports = function() {
         }
     }
 
-    var isUrban = function(urbanClusters, urbanAreas) {
-        var urban = false;
-        if ((urbanClusters === null || urbanClusters.length === 0) && (urbanAreas === null || urbanAreas.length === 0)) {
-            urban = true;
-        }
-        return urban;
-    }
-
     var address = {};
 
     address.process = function(queries) {
@@ -25551,24 +25543,11 @@ module.exports = function() {
     }
 
     address.getFIPSandCounty = function(lat, lon) {
-        $.ajax({
-          url: 'http://data.fcc.gov/api/block/find',
-          dataType: 'jsonp',
-          data: {
-            latitude: lat,
-            longitude: lon,
-            showall: true,
-            format: 'jsonp'
-          },
-          jsonpCallback: 'fccAPI.callback'
-        })
-        .fail(function(jqXHR, textStatus) {
-          console.log(textStatus);
-        });
+        
     }
 
     // rural check
-    address.isRural = function(mapbox, fcc, year) {
+    address.isRural = function(mapbox, year) {
         var result = {};
 
         // we have something so start setting up the result
@@ -25576,51 +25555,63 @@ module.exports = function() {
         result.address = mapbox.results.features[0].place_name;
         result.x = mapbox.results.features[0].center[1];
         result.y = mapbox.results.features[0].center[0];
-        result.block = fcc.Block.FIPS;
-
-        fipsCode = fcc.County.FIPS;
-
-        result.countyName = fcc.County.name;
 
         $.ajax({
-            url: 'data/' + year + '.json',
-            dataType: 'json',
-            success: function load(fips) {
-                var inCounty = false;
-                $.each(fips.fips, function(key, val) {
-                    if (val[0] === fipsCode) {
-                        console.log('in County');
-                        inCounty = true;
-                        result.rural = 'Yes';
-                        result.type = 'rural';
-                        address.render(result);
-                        count.updateCount(result.type);
-                    }
-                });
+            url: 'http://data.fcc.gov/api/block/find',
+            dataType: 'jsonp',
+            data: {
+                latitude: result.x,
+                longitude: result.y,
+                showall: true,
+                format: 'jsonp'
+            },
+            success: function load(fcc) {
+                result.block = fcc.Block.FIPS;
+                fipsCode = fcc.County.FIPS;
 
-                if (!inCounty) {
-                    console.log('not in County');
-                    // load geoson
-                    $.ajax({
-                        url: 'geojson/vt.geojson',
-                        dataType: 'json',
-                        success: function load(d) {
-                            var gjLayer = L.geoJson(d);
-                            var inPoly = leafletPip.pointInLayer([result.y, result.x], gjLayer, true);
-                            console.log(inPoly);
-                            if (inPoly.length === 0) {
+                result.countyName = fcc.County.name;
+
+                $.ajax({
+                    url: 'data/' + year + '.json',
+                    dataType: 'json',
+                    success: function load(fips) {
+                        var inCounty = false;
+                        $.each(fips.fips, function(key, val) {
+                            if (val[0] === fipsCode) {
+                                inCounty = true;
                                 result.rural = 'Yes';
                                 result.type = 'rural';
-                            } else {
-                                result.rural = 'No';
-                                result.type = 'notRural';
+                                address.render(result);
+                                count.updateCount(result.type);
                             }
-                            address.render(result);
-                            count.updateCount(result.type);
+                        });
+
+                        if (!inCounty) {
+                            // load geoson
+                            $.ajax({
+                                url: 'geojson/vt.geojson',
+                                dataType: 'json',
+                                success: function load(d) {
+                                    var gjLayer = L.geoJson(d);
+                                    var inPoly = leafletPip.pointInLayer([result.y, result.x], gjLayer, true);
+                                    if (inPoly.length === 0) {
+                                        result.rural = 'Yes';
+                                        result.type = 'rural';
+                                    } else {
+                                        result.rural = 'No';
+                                        result.type = 'notRural';
+                                    }
+                                    address.render(result);
+                                    count.updateCount(result.type);
+                                }
+                            });
                         }
-                    });
-                }
+                    }
+                });
             }
+        })
+        .fail(function(jqXHR, textStatus) {
+          console.log(textStatus);
         });
     }
 
@@ -25640,10 +25631,9 @@ require('./misc');
 window.mapboxAPI = {};
 window.fccAPI = {};
 
-var mapboxResult = {};
 
 mapboxAPI.callback = function(err, data) {
-    mapboxResult = data;
+    //console.log(mapboxResult);
 
     var input = address.getInput(data.results.query);
         
@@ -25658,16 +25648,8 @@ mapboxAPI.callback = function(err, data) {
         address.render(result);
         count.updateCount(result.type);
     } else { // api returned a match
-        address.getFIPSandCounty(data.results.features[0].center[1], data.results.features[0].center[0]);
+       address.isRural(data, $('#year').val());
     }
-}
-
-fccAPI.callback = function(data) {
-    // check for rural or underserved
-    address.isRural(mapboxResult, data, $('#year').val());
-    /*// render
-    address.render(result);
-    count.updateCount(result.type);*/
 }
 
 // on submit
