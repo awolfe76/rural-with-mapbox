@@ -13,8 +13,6 @@ window.fccAPI = {};
 
 
 mapboxAPI.callback = function(err, data) {
-    //console.log(mapboxResult);
-
     var input = address.getInput(data.results.query);
         
     //var input = data.result.input.address.address;

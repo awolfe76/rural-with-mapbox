@@ -64,8 +64,10 @@ module.exports = function() {
 
         // add the map link if needed
         if(result.rural != '-') {
+            // remove later
+            rowHTML = rowHTML + ' ' + result.why;
             rowHTML = rowHTML
-                + ' <a href="#" class="hide-print jsLoadMap right" data-map="false" data-lat="' + result.x + '" data-lon="' + result.y + '" data-id="loc-' + mapID + '">Show map <span class="cf-icon cf-icon-plus-round"></span></a>'
+                + ' <a href="#" class="hide-print jsLoadMap right" data-state="' + result.state + '" data-map="false" data-lat="' + result.y + '" data-lon="' + result.x + '" data-id="loc-' + mapID + '">Show map <span class="cf-icon cf-icon-plus-round"></span></a>'
         }
 
         rowHTML = rowHTML
@@ -100,10 +102,6 @@ module.exports = function() {
         return input;
     }
 
-    address.getFIPSandCounty = function(lat, lon) {
-        
-    }
-
     // rural check
     address.isRural = function(mapbox, year) {
         var result = {};
@@ -125,11 +123,12 @@ module.exports = function() {
             },
             success: function load(fcc) {
                 var state = fcc.State.code.toLowerCase();
-                console.log(state);
+                result.state = state;
                 result.block = fcc.Block.FIPS;
                 fipsCode = fcc.County.FIPS;
 
                 result.countyName = fcc.County.name;
+                result.countyFIPS = fcc.County.FIPS;
 
                 $.ajax({
                     url: 'data/' + year + '.json',
@@ -137,10 +136,13 @@ module.exports = function() {
                     success: function load(fips) {
                         var inCounty = false;
                         $.each(fips.fips, function(key, val) {
-                            if (val[0] === fipsCode) {
+                            if (val[0] === result.countyFIPS) {
+                                console.log(result.countyFIPS + ' = ' + val[0] + ' and ' + val[1] + ' and ' + result.address);
                                 inCounty = true;
                                 result.rural = 'Yes';
                                 result.type = 'rural';
+                                result.why = 'county';
+                                console.log(result);
                                 address.render(result);
                                 count.updateCount(result.type);
                             }
@@ -157,6 +159,7 @@ module.exports = function() {
                                     if (inPoly.length === 0) {
                                         result.rural = 'Yes';
                                         result.type = 'rural';
+                                        result.why = 'pip';
                                     } else {
                                         result.rural = 'No';
                                         result.type = 'notRural';

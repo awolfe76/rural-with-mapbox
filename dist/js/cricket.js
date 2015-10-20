@@ -25506,8 +25506,10 @@ module.exports = function() {
 
         // add the map link if needed
         if(result.rural != '-') {
+            // remove later
+            rowHTML = rowHTML + ' ' + result.why;
             rowHTML = rowHTML
-                + ' <a href="#" class="hide-print jsLoadMap right" data-map="false" data-lat="' + result.x + '" data-lon="' + result.y + '" data-id="loc-' + mapID + '">Show map <span class="cf-icon cf-icon-plus-round"></span></a>'
+                + ' <a href="#" class="hide-print jsLoadMap right" data-state="' + result.state + '" data-map="false" data-lat="' + result.y + '" data-lon="' + result.x + '" data-id="loc-' + mapID + '">Show map <span class="cf-icon cf-icon-plus-round"></span></a>'
         }
 
         rowHTML = rowHTML
@@ -25542,10 +25544,6 @@ module.exports = function() {
         return input;
     }
 
-    address.getFIPSandCounty = function(lat, lon) {
-        
-    }
-
     // rural check
     address.isRural = function(mapbox, year) {
         var result = {};
@@ -25567,11 +25565,12 @@ module.exports = function() {
             },
             success: function load(fcc) {
                 var state = fcc.State.code.toLowerCase();
-                console.log(state);
+                result.state = state;
                 result.block = fcc.Block.FIPS;
                 fipsCode = fcc.County.FIPS;
 
                 result.countyName = fcc.County.name;
+                result.countyFIPS = fcc.County.FIPS;
 
                 $.ajax({
                     url: 'data/' + year + '.json',
@@ -25579,10 +25578,13 @@ module.exports = function() {
                     success: function load(fips) {
                         var inCounty = false;
                         $.each(fips.fips, function(key, val) {
-                            if (val[0] === fipsCode) {
+                            if (val[0] === result.countyFIPS) {
+                                console.log(result.countyFIPS + ' = ' + val[0] + ' and ' + val[1] + ' and ' + result.address);
                                 inCounty = true;
                                 result.rural = 'Yes';
                                 result.type = 'rural';
+                                result.why = 'county';
+                                console.log(result);
                                 address.render(result);
                                 count.updateCount(result.type);
                             }
@@ -25599,6 +25601,7 @@ module.exports = function() {
                                     if (inPoly.length === 0) {
                                         result.rural = 'Yes';
                                         result.type = 'rural';
+                                        result.why = 'pip';
                                     } else {
                                         result.rural = 'No';
                                         result.type = 'notRural';
@@ -25635,8 +25638,6 @@ window.fccAPI = {};
 
 
 mapboxAPI.callback = function(err, data) {
-    //console.log(mapboxResult);
-
     var input = address.getInput(data.results.query);
         
     //var input = data.result.input.address.address;
@@ -25874,13 +25875,6 @@ $('#add-another').click(function(e) {
   textInput.add();
 });
 
-// detect hash change
-window.onhashchange = function() {
-  if (document.location.hash !== '#results') {
-    // trigger a #link-about click event
-    $('#link-about').trigger("click");
-  }
-}
 
 // about click
 $('#link-about').click(function(e) {
@@ -25994,6 +25988,7 @@ $('body').on('click', 'a.jsLoadMap', function(e) {
   var lat = $(this).data('lat');
   var lon = $(this).data('lon');
   var id = $(this).data('id');
+  var state = $(this).data('state');
   var mapShown = $(this).data('map');
 
   // if the map row is hidden
@@ -26021,6 +26016,10 @@ $('body').on('click', 'a.jsLoadMap', function(e) {
       
       // add marker
       var marker = L.marker(latlng).addTo(map);
+
+      var featureLayer = L.mapbox.featureLayer()
+          .loadURL('geojson/' + state + '.geojson')
+          .addTo(map);
     }
   } else {  // map is being displayed
     // hide it

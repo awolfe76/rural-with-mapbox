@@ -10,6 +10,7 @@ $('body').on('click', 'a.jsLoadMap', function(e) {
   var lat = $(this).data('lat');
   var lon = $(this).data('lon');
   var id = $(this).data('id');
+  var state = $(this).data('state');
   var mapShown = $(this).data('map');
 
   // if the map row is hidden
@@ -37,6 +38,10 @@ $('body').on('click', 'a.jsLoadMap', function(e) {
       
       // add marker
       var marker = L.marker(latlng).addTo(map);
+
+      var featureLayer = L.mapbox.featureLayer()
+          .loadURL('geojson/' + state + '.geojson')
+          .addTo(map);
     }
   } else {  // map is being displayed
     // hide it
