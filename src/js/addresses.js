@@ -125,7 +125,7 @@ module.exports = function() {
                 var state = fcc.State.code.toLowerCase();
                 result.state = state;
                 result.block = fcc.Block.FIPS;
-                fipsCode = fcc.County.FIPS;
+                //fipsCode = fcc.County.FIPS;
 
                 result.countyName = fcc.County.name;
                 result.countyFIPS = fcc.County.FIPS;
