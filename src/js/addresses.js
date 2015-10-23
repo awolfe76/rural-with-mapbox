@@ -137,12 +137,10 @@ module.exports = function() {
                         var inCounty = false;
                         $.each(fips.fips, function(key, val) {
                             if (val[0] === result.countyFIPS) {
-                                console.log(result.countyFIPS + ' = ' + val[0] + ' and ' + val[1] + ' and ' + result.address);
                                 inCounty = true;
                                 result.rural = 'Yes';
                                 result.type = 'rural';
                                 result.why = 'county';
-                                console.log(result);
                                 address.render(result);
                                 count.updateCount(result.type);
                             }
